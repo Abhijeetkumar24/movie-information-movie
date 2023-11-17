@@ -9,7 +9,7 @@ import { GuardsModule } from './guards/guards.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb+srv://Abhijeet:abhijeet@cluster0.dh4tila.mongodb.net/sample_mflix'),
+    MongooseModule.forRoot('mongodb+srv://Abhijeet:abhijeet@cluster0.dh4tila.mongodb.net/movie_info_movie'),
 
     ConfigModule.forRoot({
       isGlobal: true,

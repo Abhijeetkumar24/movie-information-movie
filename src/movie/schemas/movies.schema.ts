@@ -85,6 +85,7 @@ export class Movie {
     @Prop()
     num_mflix_comments: number;
 
+
 }
 
 export const MovieSchema = SchemaFactory.createForClass(Movie);

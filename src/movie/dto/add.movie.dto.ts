@@ -36,15 +36,6 @@ export class AddMovieDto {
     @IsString()
     rated: string;
 
-    // @Prop(
-    //     {
-    //         type: {
-    //             wins: Number,
-    //             nominations: Number,
-    //             text: String,
-    //         },
-    //     }
-    // )
     @IsObject()
     awards: {
         wins: number;
@@ -58,15 +49,6 @@ export class AddMovieDto {
     @IsNumber()
     year: number;
 
-    // @Prop(
-    //     {
-    //         type: {
-    //             rating: Number,
-    //             votes: Number,
-    //             id: Number
-    //         }
-    //     }
-    // )
     @IsObject()
     imdb: {
         rating: number;

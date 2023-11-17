@@ -8,7 +8,7 @@ class ResponseUtils{
         status: string = HttpStatusMessage.OK,
     ): HttpResponse {
         const response : HttpResponse = {
-            code: this.getStatusCode(<keyof typeof HttpStatusCode> status),                               //  is a type assertion that is used to convert the status parameter into a type that represents the keys of the HttpStatusCode enum ( here we find httpstatuscode using the httpstatusmessage)
+            code: this.getStatusCode(<keyof typeof HttpStatusCode> status),
             status: status,
             message: message,
             timestamp: new Date().getTime(),
