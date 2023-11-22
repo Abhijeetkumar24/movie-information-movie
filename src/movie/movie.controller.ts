@@ -9,7 +9,10 @@ import { AddMovieDto } from './dto/add.movie.dto';
 import { AddCommentDto } from './dto/add.comment.dto';
 import { UpdateMovieDto } from './dto/update.movie.dto';
 import { UpdateCommentDto } from './dto/update.comment.dto';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Movie')
+@ApiBearerAuth()
 @Controller('movie')
 export class MovieController implements OnModuleInit, OnModuleDestroy {
 
@@ -27,9 +30,10 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
     }
 
 
-    @Roles(Role.User)
+    @Roles(Role.User, Role.Admin)
     @UseGuards(AuthGuard)
     @Get()
+    @ApiOperation({ summary: 'Get Movies', description: 'Retrieve a list of movies.' })
     async getMovies(@Req() req: Request, @Res() res: Response) {
         try {
             const response = await this.movieService.getMovies();
@@ -52,6 +56,7 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
     @Roles(Role.Admin)
     @UseGuards(AuthGuard)
     @Post()
+    @ApiOperation({ summary: 'Add Movie', description: 'Endpoint to add a new movie.' })
     async addMovies(@Body() addMovieDto: AddMovieDto, @Req() req: Request, @Res() res: Response) {
         try {
             const response = await this.movieService.addMovie(addMovieDto);
@@ -75,6 +80,8 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
     @Roles(Role.User)
     @UseGuards(AuthGuard)
     @Post(':id/comment')
+    @ApiOperation({ summary: 'Add Comment', description: 'Endpoint to add a comment to a movie.' })
+    @ApiParam({ name: 'id', description: 'Movie ID' })
     async addComment(@Param('id') movieId: string, @Body() addCommentDto: AddCommentDto, @Req() req: Request, @Res() res: Response,) {
         try {
             const response = await this.movieService.addComment(addCommentDto, req['user'].sub, movieId);
@@ -94,8 +101,10 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
 
     }
 
-    @Roles(Role.User)
+    @Roles(Role.User, Role.Admin)
     @UseGuards(AuthGuard)
+    @ApiOperation({ summary: 'Get Movie by ID', description: 'Endpoint to retrieve a movie by its ID.' })
+    @ApiParam({ name: 'id', description: 'Movie ID' })
     @Get('movie-id/:id')
     async GetMovieById(@Param('id') movieId: string, @Req() req: Request, @Res() res: Response,) {
         try {
@@ -120,6 +129,8 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
 
     @Roles(Role.Admin)
     @UseGuards(AuthGuard)
+    @ApiOperation({ summary: 'Update Movie', description: 'Endpoint to update a movie by its ID.' })
+    @ApiParam({ name: 'id', description: 'Movie ID' })
     @Put(':id')
     async UpdateMovie(@Param('id') movieId: string, @Body() updatedMovieDto: UpdateMovieDto, @Req() req: Request, @Res() res: Response,) {
         try {
@@ -143,6 +154,8 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
 
     @Roles(Role.Admin)
     @UseGuards(AuthGuard)
+    @ApiOperation({ summary: 'Delete Movie', description: 'Endpoint to delete a movie by its ID.' })
+    @ApiParam({ name: 'id', description: 'Movie ID' })
     @Delete(':id')
     async DeleteMovie(@Param('id') movieId: string, @Req() req: Request, @Res() res: Response,) {
         try {
@@ -164,8 +177,10 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
     }
 
 
-    @Roles(Role.User)
+    @Roles(Role.User,Role.Admin)
     @UseGuards(AuthGuard)
+    @ApiOperation({ summary: 'Get Comments for Movie', description: 'Endpoint to retrieve comments for a movie by its ID.' })
+    @ApiParam({ name: 'id', description: 'Movie ID' })
     @Get(':id/comments')
     async getComments(@Param('id') movieId: string, @Res() res: Response) {
         try {
@@ -188,6 +203,8 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
 
     @Roles(Role.User)
     @UseGuards(AuthGuard)
+    @ApiOperation({ summary: 'Update Comment', description: 'Endpoint to update a comment by its ID.' })
+    @ApiParam({ name: 'id', description: 'Comment ID' })
     @Put('comment/:id')
     async updateComment(@Param('id') commentId: string,@Body() updateCommentdto: UpdateCommentDto, @Res() res: Response) {
         try {
@@ -210,6 +227,8 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
 
     @Roles(Role.User)
     @UseGuards(AuthGuard)
+    @ApiOperation({ summary: 'Delete Comment', description: 'Endpoint to delete a comment by its ID.' })
+    @ApiParam({ name: 'id', description: 'Comment ID' })
     @Delete('comment/:id')
     async DeleteComment(@Param('id') commentId: string, @Req() req: Request, @Res() res: Response,) {
         try {
@@ -233,6 +252,8 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
 
     @Roles(Role.User)
     @UseGuards(AuthGuard)
+    @ApiOperation({ summary: 'Search Movie', description: 'Endpoint to search for movies based on a query string.' })
+    @ApiQuery({ name: 'query', description: 'Search query', required: true })
     @Get('search')
     async SearchMovie(@Query('query') queryData: string, @Req() req: Request, @Res() res: Response,) {
         try {

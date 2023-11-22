@@ -7,7 +7,7 @@ import { GuardsModule } from 'src/guards/guards.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { KafkaConfig } from 'kafkajs';
-import {Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
+import { Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
 
 
 @Module({
@@ -20,7 +20,7 @@ import {Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
 
       ]
     ),
-  
+
     ClientsModule.register([
       {
         name: 'AUTH_PACKAGE',
@@ -31,6 +31,7 @@ import {Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
           protoPath: join(__dirname, '../../../proto/auth.proto'),
         },
       },
+
       {
         name: 'NOTIFICATION_PACKAGE',
         transport: Transport.GRPC,
@@ -40,6 +41,7 @@ import {Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
           protoPath: join(__dirname, '../../../proto/notification.proto'),
         },
       },
+
       {
         name: 'USER_PACKAGE',
         transport: Transport.GRPC,
@@ -49,40 +51,25 @@ import {Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
           protoPath: join(__dirname, '../../../proto/user.proto'),
         },
       },
-      // {
-      //   name: 'MATH_SERVICE',
-      //   transport: Transport.MQTT,
-      //   options: {
-      //     url: 'mqtt://broker.hivemq.com',
-      //     // url: 'mqtt://localhost:1833',
-      //     // url: 'localhost:1833',
 
-      //   }
-      // },
-      // {
-      //   name: 'KAFKA_CLIENT', // You can give your client a unique name
-      //   transport: Transport.KAFKA,
-      //   options: {
-      //     client: {
-      //       brokers: ['localhost:9092'],
-      //     },
-      //   },
-      // },
+      {
+        name: 'MQTT_CLIENT',
+        transport: Transport.MQTT,
+        options: {
+          url: 'mqtt://broker.hivemq.com',
+        }
+      },
 
-      // {
-      //   name: 'NOTIFICATION_SERVICE',
-      //   transport: Transport.KAFKA,
-      //   options: {
-      //     client: {
-      //       clientId: 'notification',
-      //       brokers: ['192.168.2.151:9092'],
-      //     },
-      //     consumer: {
-      //       groupId: 'notification-consumer'
-      //     }
-      //   }
-      // },
-
+      {
+        name: 'KAFKA_CLIENT',
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            brokers: ['192.168.2.151:9092'],
+          },
+        },
+      },
+      
     ]),
   ],
   controllers: [MovieController],

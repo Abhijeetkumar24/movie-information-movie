@@ -9,7 +9,12 @@ import { GuardsModule } from './guards/guards.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb+srv://Abhijeet:abhijeet@cluster0.dh4tila.mongodb.net/movie_info_movie'),
+    
+    MongooseModule.forRootAsync({
+      useFactory: () => ({
+        uri: process.env.MONGO_URL
+      }),
+    }),
 
     ConfigModule.forRoot({
       isGlobal: true,

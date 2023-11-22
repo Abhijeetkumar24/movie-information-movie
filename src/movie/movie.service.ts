@@ -7,7 +7,7 @@ import { Movie } from 'src/movie/schemas/movies.schema';
 import { CustomException } from 'src/utils/exception.util';
 import { AddMovieDto } from './dto/add.movie.dto';
 // import { NotificationService } from 'src/interface/notification.interface';
-import { Client, ClientGrpc, ClientKafka, ClientProxy, Transport } from '@nestjs/microservices';
+import { Client, ClientGrpc, ClientKafka, ClientMqtt, ClientProxy, ClientRMQ, Transport } from '@nestjs/microservices';
 import { AuthService, } from 'src/interface/auth.interface';
 import { AddCommentDto } from './dto/add.comment.dto';
 import { Comment } from './schemas/comments.schema';
@@ -25,33 +25,14 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     private userService: UserService;
 
 
-
-    @Client({
-        transport: Transport.KAFKA,
-        options: {
-            client: {
-                brokers: ['192.168.2.151:9092'],
-            },
-        },
-    })
-    private readonly client: ClientKafka;
-
-    @Client({
-        transport: Transport.MQTT,
-        options: {
-            url: 'mqtt://broker.hivemq.com',
-            // url: process.env.MQTTURL,
-        }
-    })
-    mqttClient: ClientProxy;
-
-
     constructor(
         @InjectModel(Movie.name) private MovieModel: Model<Movie>,
         @InjectModel(Comment.name) private CommentModel: Model<Comment>,
         @Inject('NOTIFICATION_PACKAGE') private NotificationClient: ClientGrpc,
         @Inject('AUTH_PACKAGE') private AuthClient: ClientGrpc,
         @Inject('USER_PACKAGE') private UserClient: ClientGrpc,
+        @Inject('KAFKA_CLIENT') private kafkaClient: ClientKafka,
+        @Inject('MQTT_CLIENT') private mqttClient: ClientMqtt,
 
 
     ) { }
@@ -60,12 +41,12 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
         // this.notificationService = this.NotificationClient.getService<NotificationService>('NotificationService');
         this.authService = this.AuthClient.getService<AuthService>('AuthService');
         this.userService = this.UserClient.getService<UserService>('UserService');
-        this.client.subscribeToResponseOf('movie.add');
-        await this.client.connect();
+        this.kafkaClient.subscribeToResponseOf('movie.add');
+        await this.kafkaClient.connect();
     }
 
     async onModuleDestroy() {
-        await this.client.close();
+        await this.kafkaClient.close();
     }
 
     // getNoti(): Observable<string> {
@@ -96,9 +77,11 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
             new this.MovieModel(addMovieDto).save();
 
             const observable = this.userService.getSubscriber({ request: true });
+
+            const emails = await lastValueFrom(observable);
             observable.subscribe(async (emails) => {
                 await lastValueFrom(
-                    this.client.send('movie.add', {
+                    this.kafkaClient.send('movie.add', {
                         key: '1',
                         value: {
                             data: emails,
@@ -175,11 +158,11 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
                 updatedMovieDto,
                 { new: true, runValidators: true }
             );
-    
+
             if (!updatedMovie) {
                 throw new CustomException(ExceptionMessage.MOVIE_NOT_FOUND, HttpStatusMessage.NOT_FOUND).getError();
             }
-    
+
             return updatedMovie;
 
         } catch (error) {
@@ -198,7 +181,7 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
 
             return deletedMovie;
         } catch (error) {
-            throw error; 
+            throw error;
         }
     }
 
@@ -206,12 +189,12 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     async getComments(movieId: string): Promise<Comment[]> {
         try {
             const id = new Types.ObjectId(movieId)
-            const comments = await this.CommentModel.find({ movieId : id});
-    
+            const comments = await this.CommentModel.find({ movieId: id });
+
             if (comments.length === 0) {
                 throw new CustomException(ExceptionMessage.COMMENTS_NOT_FOUND, HttpStatusMessage.NOT_FOUND).getError();
             }
-    
+
             return comments;
         } catch (error) {
             throw error;
@@ -221,18 +204,18 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
 
     async updateComment(commentId: string, updateCommentdto: UpdateCommentDto): Promise<Comment> {
         try {
-             const {text} = updateCommentdto;
+            const { text } = updateCommentdto;
             const commentObjectId = new Types.ObjectId(commentId);
-    
+
             const existingComment = await this.CommentModel.findOne({ _id: commentObjectId });
-    
+
             if (!existingComment) {
                 throw new CustomException(ExceptionMessage.COMMENT_NOT_FOUND, HttpStatusMessage.NOT_FOUND).getError();
             }
 
             existingComment.text = text;
             await existingComment.save();
-    
+
             return existingComment;
         } catch (error) {
             throw error;
@@ -248,37 +231,44 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
                 throw new CustomException(ExceptionMessage.COMMENT_NOT_FOUND, HttpStatusMessage.NOT_FOUND).getError();
             }
 
-            return ;
+            return;
         } catch (error) {
-            throw error; 
+            throw error;
         }
     }
 
-    
-    async searchMovie (queryData: string): Promise<any> {
+
+    async searchMovie(queryData: string): Promise<any> {
         try {
-            const pipeline = [                                 
-                    {
-                        $search: {
-                            index: "text-search",
-                            text: {
-                                query: queryData,
-                                path: "title",
+            const pipeline = [
+                {
+                    $search: {
+                        index: "text-search",
+                        text: {
+                            query: queryData,
+                            path: "title",
+                            fuzzy: {
+                                "maxEdits": 1,
+                                "prefixLength": 1,
+                                "maxExpansions": 256
                             }
-                        }
-                    },
-                    {
-                        $project: {
-                            _id: 0,
-                            title: 1,
-                            plot: 1
-                        }
+                        },
                     }
-                ]
-              
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        title: 1,
+                        score: {
+                            $meta: "searchScore"
+                        },
+                    }
+                }
+            ]
+
             return await this.MovieModel.aggregate(pipeline);
         } catch (error) {
-            throw error; 
+            throw error;
         }
     }
 
