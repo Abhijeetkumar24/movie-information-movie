@@ -1,6 +1,6 @@
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model, Types } from 'mongoose';
+import mongoose, { Model, Types, isValidObjectId } from 'mongoose';
 import { Observable, defaultIfEmpty, lastValueFrom } from 'rxjs';
 import { ExceptionMessage, HttpStatusMessage } from 'src/interface/enum';
 import { Movie } from 'src/movie/schemas/movies.schema';
@@ -55,57 +55,72 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
 
     async getMovies(): Promise<any> {
         try {
-            return await this.MovieModel.find(
-                {},
-                { title: 1, year: 1 }
-            ).limit(5);
-        }
-        catch (error) {
+            const movies = await this.MovieModel.find({}, { title: 1, year: 1 }).limit(5);
+
+            if (!movies || movies.length === 0) {
+                throw new CustomException(ExceptionMessage.NO_MOVIES_FOUND, HttpStatusMessage.NOT_FOUND).getError();
+            }
+
+            return movies;
+        } catch (error) {
             throw error;
         }
     }
+
 
 
     async addMovie(addMovieDto: AddMovieDto): Promise<any> {
         try {
             const title = addMovieDto.title;
+
             const existingMovie = await this.MovieModel.findOne({ title });
             if (existingMovie) {
                 throw new CustomException(ExceptionMessage.MOVIE_ALREADY_EXIST, HttpStatusMessage.CONFLICT).getError();
             }
 
-            new this.MovieModel(addMovieDto).save();
+
+            const newMovie = new this.MovieModel(addMovieDto);
+            await newMovie.save();
+
 
             const observable = this.userService.getSubscriber({ request: true });
+            const data = await lastValueFrom(observable);                        // data is object {emails: []}
 
-            const emails = await lastValueFrom(observable);
-            observable.subscribe(async (emails) => {
+            if (data.emails && data.emails.length > 0) {
                 await lastValueFrom(
                     this.kafkaClient.send('movie.add', {
                         key: '1',
                         value: {
-                            data: emails,
+                            data: data,
                             title: title,
                         },
                     }),
                 );
-
-            })
+            }
 
             return;
-        }
-        catch (error) {
+        } catch (error) {
             throw error;
         }
-
     }
 
+   
 
     async addComment(addCommentDto: AddCommentDto, id: string, movieId: string): Promise<any> {
         try {
             const { text } = addCommentDto;
+
             const result = this.userService.getNameEmail({ id });
             const userData = await lastValueFrom(result);
+
+            if (!userData || !userData.name || !userData.email) {
+                throw new CustomException(ExceptionMessage.USER_DATA_NOT_FOUND, HttpStatusMessage.NOT_FOUND).getError();
+            }
+
+            const movie = await this.MovieModel.findById(movieId);
+            if (!movie) {
+                throw new CustomException(ExceptionMessage.MOVIE_NOT_FOUND, HttpStatusMessage.NOT_FOUND).getError();
+            }
 
             const comment = new this.CommentModel({
                 text: text,
@@ -114,45 +129,55 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
                 movieId: new Types.ObjectId(movieId),
             });
 
-
             await comment.save();
 
-
             const observable = this.userService.getSubscriber({ request: true });
-            const emails = await lastValueFrom(observable);
-            const movie = await this.MovieModel.findById(movieId)
+            const data = await lastValueFrom(observable);
 
-            const mqttData = {
-                name: userData.name,
-                text: text,
-                email: userData.email,
-                subscriberEmails: emails,
-                movieName: movie.title,
-            };
-            await lastValueFrom(this.mqttClient.send('notification.add.comment', mqttData));
-
+            if (data.emails && data.emails.length > 0) {
+                const mqttData = {
+                    name: userData.name,
+                    text: text,
+                    email: userData.email,
+                    subscriberEmails: data,
+                    movieName: movie.title,
+                };
+                await lastValueFrom(this.mqttClient.send('notification.add.comment', mqttData));
+            }
 
             return;
         } catch (error) {
-            throw new CustomException(ExceptionMessage.ERROR_IN_COMMENT_ADDING, HttpStatusMessage.BAD_REQUEST).getError();
-
+            throw error;
         }
     }
 
+  
 
     async getMovieById(movieId: string): Promise<any> {
         try {
-            return await this.MovieModel.findById(movieId)
+            if (!isValidObjectId(movieId)) {
+                throw new CustomException(ExceptionMessage.INVALID_MOVIE_ID, HttpStatusMessage.BAD_REQUEST).getError();
+            }
 
+            const movie = await this.MovieModel.findById(movieId);
+
+            if (!movie) {
+                throw new CustomException(ExceptionMessage.MOVIE_NOT_FOUND, HttpStatusMessage.NOT_FOUND).getError();
+            }
+
+            return movie;
         } catch (error) {
-            throw new CustomException(ExceptionMessage.ERROR_IN_MOVIE_FETCHING, HttpStatusMessage.BAD_REQUEST).getError();
-
+            throw error;
         }
     }
 
-
     async updateMovie(movieId: string, updatedMovieDto: UpdateMovieDto): Promise<any> {
         try {
+
+            if (!isValidObjectId(movieId)) {
+                throw new CustomException(ExceptionMessage.INVALID_MOVIE_ID, HttpStatusMessage.BAD_REQUEST).getError();
+            }
+
             const updatedMovie = await this.MovieModel.findByIdAndUpdate(
                 movieId,
                 updatedMovieDto,
@@ -166,13 +191,19 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
             return updatedMovie;
 
         } catch (error) {
-            throw new CustomException(ExceptionMessage.ERROR_IN_MOVIE_UPDATE, HttpStatusMessage.BAD_REQUEST).getError();
+            throw error
 
         }
     }
 
+
     async deleteMovie(movieId: string): Promise<Movie> {
         try {
+
+            if (!isValidObjectId(movieId)) {
+                throw new CustomException(ExceptionMessage.INVALID_MOVIE_ID, HttpStatusMessage.BAD_REQUEST).getError();
+            }
+
             const deletedMovie = await this.MovieModel.findByIdAndDelete(movieId);
 
             if (!deletedMovie) {
@@ -188,6 +219,11 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
 
     async getComments(movieId: string): Promise<Comment[]> {
         try {
+
+            if (!isValidObjectId(movieId)) {
+                throw new CustomException(ExceptionMessage.INVALID_MOVIE_ID, HttpStatusMessage.BAD_REQUEST).getError();
+            }
+
             const id = new Types.ObjectId(movieId)
             const comments = await this.CommentModel.find({ movieId: id });
 
@@ -204,6 +240,11 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
 
     async updateComment(commentId: string, updateCommentdto: UpdateCommentDto): Promise<Comment> {
         try {
+
+            if (!isValidObjectId(commentId)) {
+                throw new CustomException(ExceptionMessage.INVALID_COMMENT_ID, HttpStatusMessage.BAD_REQUEST).getError();
+            }
+
             const { text } = updateCommentdto;
             const commentObjectId = new Types.ObjectId(commentId);
 
@@ -225,6 +266,11 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
 
     async deleteComment(commentId: string): Promise<any> {
         try {
+
+            if (!isValidObjectId(commentId)) {
+                throw new CustomException(ExceptionMessage.INVALID_COMMENT_ID, HttpStatusMessage.BAD_REQUEST).getError();
+            }
+
             const deletedComment = await this.CommentModel.findByIdAndDelete(commentId);
 
             if (!deletedComment) {
@@ -240,6 +286,11 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
 
     async searchMovie(queryData: string): Promise<any> {
         try {
+
+            if (!queryData ) {
+                throw new CustomException(ExceptionMessage.INVALID_SEARCH_QUERY, HttpStatusMessage.BAD_REQUEST).getError();
+            }
+
             const pipeline = [
                 {
                     $search: {
@@ -266,7 +317,13 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
                 }
             ]
 
-            return await this.MovieModel.aggregate(pipeline);
+            const searchResults = await this.MovieModel.aggregate(pipeline);
+
+            if (!searchResults || searchResults.length === 0) {
+                throw new CustomException(ExceptionMessage.NO_SEARCH_RESULTS, HttpStatusMessage.NOT_FOUND).getError();
+            }
+
+            return searchResults;
         } catch (error) {
             throw error;
         }

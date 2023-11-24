@@ -10,6 +10,8 @@ import { AddCommentDto } from './dto/add.comment.dto';
 import { UpdateMovieDto } from './dto/update.movie.dto';
 import { UpdateCommentDto } from './dto/update.comment.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CustomException } from 'src/utils/exception.util';
+import { isValidObjectId } from 'mongoose';
 
 @ApiTags('Movie')
 @ApiBearerAuth()
@@ -41,7 +43,7 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
                 response,
                 SuccessMessage.GET_MOVIES_SUCCESS,
                 HttpStatusMessage.OK
-            )
+            );
             res.status(finalResponse.code).send(finalResponse);
         } catch (error) {
             let err = responseUtils.errorResponse(
@@ -50,8 +52,8 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
             );
             res.status(err.code).send(err);
         }
-
     }
+
 
     @Roles(Role.Admin)
     @UseGuards(AuthGuard)
@@ -108,12 +110,21 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
     @Get('movie-id/:id')
     async GetMovieById(@Param('id') movieId: string, @Req() req: Request, @Res() res: Response,) {
         try {
+            if (!isValidObjectId(movieId)) {
+                throw new CustomException(ExceptionMessage.INVALID_MOVIE_ID, HttpStatusMessage.BAD_REQUEST).getError();
+            }
+
             const response = await this.movieService.getMovieById(movieId);
+
+            if (!response) {
+                throw new CustomException(ExceptionMessage.MOVIE_NOT_FOUND, HttpStatusMessage.NOT_FOUND).getError();
+            }
+
             let finalResponse = responseUtils.successResponse(
                 response,
                 SuccessMessage.MOVIE_FETCH_SUCCESSFULLY,
                 HttpStatusMessage.OK
-            )
+            );
             res.status(finalResponse.code).send(finalResponse);
         } catch (error) {
             let err = responseUtils.errorResponse(
@@ -122,9 +133,7 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
             );
             res.status(err.code).send(err);
         }
-
     }
-
 
 
     @Roles(Role.Admin)
@@ -167,6 +176,7 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
             )
             res.status(finalResponse.code).send(finalResponse);
         } catch (error) {
+            console.log("h 22")
             let err = responseUtils.errorResponse(
                 error,
                 ExceptionMessage.ERROR_IN_MOVIE_DELETE,
@@ -177,7 +187,7 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
     }
 
 
-    @Roles(Role.User,Role.Admin)
+    @Roles(Role.User, Role.Admin)
     @UseGuards(AuthGuard)
     @ApiOperation({ summary: 'Get Comments for Movie', description: 'Endpoint to retrieve comments for a movie by its ID.' })
     @ApiParam({ name: 'id', description: 'Movie ID' })
@@ -206,7 +216,7 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
     @ApiOperation({ summary: 'Update Comment', description: 'Endpoint to update a comment by its ID.' })
     @ApiParam({ name: 'id', description: 'Comment ID' })
     @Put('comment/:id')
-    async updateComment(@Param('id') commentId: string,@Body() updateCommentdto: UpdateCommentDto, @Res() res: Response) {
+    async updateComment(@Param('id') commentId: string, @Body() updateCommentdto: UpdateCommentDto, @Res() res: Response) {
         try {
             const response = await this.movieService.updateComment(commentId, updateCommentdto);
             const finalResponse = responseUtils.successResponse(
@@ -279,6 +289,6 @@ export class MovieController implements OnModuleInit, OnModuleDestroy {
     // async Noti() {
     //     return this.movieService.getNoti();
     // }
-    
+
 
 }

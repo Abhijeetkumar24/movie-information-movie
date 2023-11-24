@@ -69,6 +69,36 @@ export enum HttpStatusMessage {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export enum ExceptionMessage {
 
 
@@ -105,7 +135,12 @@ export enum ExceptionMessage {
     INVALID_OTP = "INVALID_OTP",
     INVALID_PASSWORD = "INVALID_PASSWORD",
     UNAUTHORIZED = "UNAUTHORIZED",
-
+    INVALID_MOVIE_ID = "Invalid movie id",
+    NO_MOVIES_FOUND = "Movie Not Found",
+    USER_DATA_NOT_FOUND = "USER_DATA_NOT_FOUND",
+    INVALID_COMMENT_ID = "INVALID_COMMENT_ID",
+    INVALID_SEARCH_QUERY = "INVALID_SEARCH_QUERY",
+    NO_SEARCH_RESULTS = "NO_SEARCH_RESULTS"
 }
 
 
