@@ -1,24 +1,26 @@
 import { Module } from '@nestjs/common';
 import { AuthGuard } from './guards.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import { ConfigModule } from '@nestjs/config';
 
 
 @Module({
-    imports: [
-        ClientsModule.register([
-            {
-              name: 'AUTH_PACKAGE',
-              transport: Transport.GRPC,
-              options: {
-                url: 'localhost:50051',
-                package: 'auth',
-                protoPath: join(__dirname, '../../../proto/auth.proto'),
-              },
-            },
-          ]),   
-    ],
-    providers: [AuthGuard],
-    exports: [ ]
+  imports: [
+    ConfigModule.forRoot({}),
+
+    ClientsModule.register([
+      {
+        name: 'AUTH_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          url: process.env.AUTH_GRPC_URL,
+          package: process.env.AUTH_PACKAGE,
+          protoPath: process.env.AUTH_PROTO_PATH,
+        },
+      },
+    ]),
+  ],
+  providers: [AuthGuard],
+  exports: []
 })
 export class GuardsModule { }

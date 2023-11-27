@@ -1,13 +1,13 @@
 import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model, Types, isValidObjectId } from 'mongoose';
-import { Observable, defaultIfEmpty, lastValueFrom } from 'rxjs';
+import { Model, Types, isValidObjectId } from 'mongoose';
+import { lastValueFrom } from 'rxjs';
 import { ExceptionMessage, HttpStatusMessage } from 'src/interface/enum';
 import { Movie } from 'src/movie/schemas/movies.schema';
 import { CustomException } from 'src/utils/exception.util';
 import { AddMovieDto } from './dto/add.movie.dto';
 // import { NotificationService } from 'src/interface/notification.interface';
-import { Client, ClientGrpc, ClientKafka, ClientMqtt, ClientProxy, ClientRMQ, Transport } from '@nestjs/microservices';
+import { ClientGrpc, ClientKafka, ClientMqtt } from '@nestjs/microservices';
 import { AuthService, } from 'src/interface/auth.interface';
 import { AddCommentDto } from './dto/add.comment.dto';
 import { Comment } from './schemas/comments.schema';
@@ -48,10 +48,6 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     async onModuleDestroy() {
         await this.kafkaClient.close();
     }
-
-    // getNoti(): Observable<string> {
-    //     return this.notificationService.addMovie({ msg: 'rachna' });
-    // }
 
     async getMovies(): Promise<any> {
         try {
@@ -94,6 +90,7 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
                             data: data,
                             title: title,
                         },
+                        partition: 0,
                     }),
                 );
             }

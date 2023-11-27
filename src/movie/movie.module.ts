@@ -5,13 +5,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Movie, MovieSchema } from 'src/movie/schemas/movies.schema';
 import { GuardsModule } from 'src/guards/guards.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
-import { KafkaConfig } from 'kafkajs';
 import { Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
+import { ConfigModule } from '@nestjs/config';
 
 
 @Module({
   imports: [
+
+    ConfigModule.forRoot({}),
     GuardsModule,
     MongooseModule.forFeature(
       [
@@ -26,9 +27,9 @@ import { Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
         name: 'AUTH_PACKAGE',
         transport: Transport.GRPC,
         options: {
-          url: 'localhost:50051',
-          package: 'auth',
-          protoPath: join(__dirname, '../../../proto/auth.proto'),
+          url: process.env.AUTH_GRPC_URL,
+          package: process.env.AUTH_PACKAGE,
+          protoPath: process.env.AUTH_PROTO_PATH,
         },
       },
 
@@ -36,9 +37,9 @@ import { Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
         name: 'NOTIFICATION_PACKAGE',
         transport: Transport.GRPC,
         options: {
-          url: 'localhost:50052',
-          package: 'notification',
-          protoPath: join(__dirname, '../../../proto/notification.proto'),
+          url: process.env.NOTIFICATION_GRPC_URL,
+          package: process.env.NOTIFICATION_PACKAGE,
+          protoPath: process.env.NOTIFICATION_PROTO_PATH,
         },
       },
 
@@ -46,9 +47,9 @@ import { Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
         name: 'USER_PACKAGE',
         transport: Transport.GRPC,
         options: {
-          url: 'localhost:50053',
-          package: 'user',
-          protoPath: join(__dirname, '../../../proto/user.proto'),
+          url: process.env.USER_GRPC_URL,
+          package: process.env.USER_PACKAGE,
+          protoPath: process.env.USER_PROTO_PATH,
         },
       },
 
@@ -56,7 +57,7 @@ import { Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
         name: 'MQTT_CLIENT',
         transport: Transport.MQTT,
         options: {
-          url: 'mqtt://broker.hivemq.com',
+          url: process.env.MQTT_URL,
         }
       },
 
@@ -65,7 +66,7 @@ import { Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
         transport: Transport.KAFKA,
         options: {
           client: {
-            brokers: ['192.168.2.151:9092'],
+            brokers: [process.env.KAFKA_URL],
           },
         },
       },

@@ -9,27 +9,19 @@ import { AddMovieDto } from './dto/add.movie.dto';
 import { AddCommentDto } from './dto/add.comment.dto';
 import { UpdateMovieDto } from './dto/update.movie.dto';
 import { UpdateCommentDto } from './dto/update.comment.dto';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CustomException } from 'src/utils/exception.util';
 import { isValidObjectId } from 'mongoose';
 
 @ApiTags('Movie')
 @ApiBearerAuth()
 @Controller('movie')
-export class MovieController implements OnModuleInit, OnModuleDestroy {
+export class MovieController {
 
     constructor(
         private movieService: MovieService,
 
     ) { }
-
-    async onModuleInit() {
-
-    }
-
-    async onModuleDestroy() {
-
-    }
 
 
     @Roles(Role.User, Role.Admin)
