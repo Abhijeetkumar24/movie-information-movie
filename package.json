@@ -9,9 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main"
+    "start:dev": "nest start --watch"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -22,11 +20,9 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.1.16",
     "@types/mqtt": "^2.5.0",
-    "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "mongoose": "^7.6.4",
     "mqtt": "^5.1.4",
-    "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {

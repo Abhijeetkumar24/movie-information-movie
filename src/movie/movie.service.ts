@@ -49,6 +49,13 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
         await this.kafkaClient.close();
     }
 
+
+    /**
+     * Retrieves a list of movies.
+     *
+     * @returns {Promise<any>} A Promise that resolves with the list of movies.
+     * @throws {Error} Throws an error if there is an issue during the retrieval of movies.
+     */
     async getMovies(): Promise<any> {
         try {
             const movies = await this.MovieModel.find({}, { title: 1, year: 1 }).limit(5);
@@ -64,7 +71,13 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     }
 
 
-
+    /**
+     * Adds a new movie.
+     *
+     * @param {AddMovieDto} addMovieDto - The data for adding a new movie.
+     * @returns {Promise<any>} A Promise that resolves when the movie is added successfully.
+     * @throws {Error} Throws an error if there is an issue during the addition of a new movie.
+     */
     async addMovie(addMovieDto: AddMovieDto): Promise<any> {
         try {
             const title = addMovieDto.title;
@@ -102,7 +115,15 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     }
 
    
-
+    /**
+     * Adds a new comment to a movie.
+     *
+     * @param {AddCommentDto} addCommentDto - The data for adding a new comment.
+     * @param {string} id - The ID of the user associated with the comment.
+     * @param {string} movieId - The ID of the movie to which the comment is added.
+     * @returns {Promise<any>} A Promise that resolves when the comment is added successfully.
+     * @throws {Error} Throws an error if there is an issue during the addition of a new comment.
+     */
     async addComment(addCommentDto: AddCommentDto, id: string, movieId: string): Promise<any> {
         try {
             const { text } = addCommentDto;
@@ -149,7 +170,13 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     }
 
   
-
+    /**
+     * Retrieves a movie by its ID.
+     *
+     * @param {string} movieId - The ID of the movie.
+     * @returns {Promise<any>} A Promise that resolves with the movie details.
+     * @throws {Error} Throws an error if there is an issue during the retrieval of the movie.
+     */
     async getMovieById(movieId: string): Promise<any> {
         try {
             if (!isValidObjectId(movieId)) {
@@ -168,6 +195,15 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
+
+    /**
+     * Updates a movie by its ID.
+     *
+     * @param {string} movieId - The ID of the movie to update.
+     * @param {UpdateMovieDto} updatedMovieDto - The data for updating the movie.
+     * @returns {Promise<any>} A Promise that resolves with the updated movie details.
+     * @throws {Error} Throws an error if there is an issue during the update of the movie.
+     */    
     async updateMovie(movieId: string, updatedMovieDto: UpdateMovieDto): Promise<any> {
         try {
 
@@ -194,6 +230,13 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     }
 
 
+    /**
+     * Deletes a movie by its ID.
+     *
+     * @param {string} movieId - The ID of the movie to delete.
+     * @returns {Promise<Movie>} A Promise that resolves with the deleted movie details.
+     * @throws {Error} Throws an error if there is an issue during the deletion of the movie.
+     */
     async deleteMovie(movieId: string): Promise<Movie> {
         try {
 
@@ -214,6 +257,13 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     }
 
 
+    /**
+     * Retrieves comments for a movie by its ID.
+     *
+     * @param {string} movieId - The ID of the movie.
+     * @returns {Promise<Comment[]>} A Promise that resolves with the list of comments.
+     * @throws {Error} Throws an error if there is an issue during the retrieval of comments.
+     */
     async getComments(movieId: string): Promise<Comment[]> {
         try {
 
@@ -235,6 +285,14 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     }
 
 
+    /**
+     * Updates a comment by its ID.
+     *
+     * @param {string} commentId - The ID of the comment to update.
+     * @param {UpdateCommentDto} updateCommentdto - The data for updating the comment.
+     * @returns {Promise<Comment>} A Promise that resolves with the updated comment details.
+     * @throws {Error} Throws an error if there is an issue during the update of the comment.
+     */
     async updateComment(commentId: string, updateCommentdto: UpdateCommentDto): Promise<Comment> {
         try {
 
@@ -260,7 +318,14 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-
+    
+    /**
+     * Deletes a comment by its ID.
+     *
+     * @param {string} commentId - The ID of the comment to delete.
+     * @returns {Promise<void>} A Promise that resolves when the comment is deleted successfully.
+     * @throws {Error} Throws an error if there is an issue during the deletion of the comment.
+     */
     async deleteComment(commentId: string): Promise<any> {
         try {
 
@@ -281,6 +346,13 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     }
 
 
+    /**
+     * Searches for movies based on a query string.
+     *
+     * @param {string} queryData - The search query.
+     * @returns {Promise<any>} A Promise that resolves with the search results.
+     * @throws {Error} Throws an error if there is an issue during the movie search.
+     */
     async searchMovie(queryData: string): Promise<any> {
         try {
 
