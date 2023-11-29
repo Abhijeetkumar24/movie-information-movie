@@ -6,7 +6,6 @@ import { ExceptionMessage, HttpStatusMessage } from 'src/interface/enum';
 import { Movie } from 'src/movie/schemas/movies.schema';
 import { CustomException } from 'src/utils/exception.util';
 import { AddMovieDto } from './dto/add.movie.dto';
-// import { NotificationService } from 'src/interface/notification.interface';
 import { ClientGrpc, ClientKafka, ClientMqtt } from '@nestjs/microservices';
 import { AuthService, } from 'src/interface/auth.interface';
 import { AddCommentDto } from './dto/add.comment.dto';
@@ -14,13 +13,13 @@ import { Comment } from './schemas/comments.schema';
 import { UserService } from 'src/interface/user.interface';
 import { UpdateMovieDto } from './dto/update.movie.dto';
 import { UpdateCommentDto } from './dto/update.comment.dto';
+import { KafkaService } from 'src/providers/kafka/kafka.service';
 
 
 
 @Injectable()
-export class MovieService implements OnModuleInit, OnModuleDestroy {
+export class MovieService implements OnModuleInit {
 
-    // private notificationService: NotificationService;
     private authService: AuthService;
     private userService: UserService;
 
@@ -28,12 +27,10 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
     constructor(
         @InjectModel(Movie.name) private MovieModel: Model<Movie>,
         @InjectModel(Comment.name) private CommentModel: Model<Comment>,
-        @Inject('NOTIFICATION_PACKAGE') private NotificationClient: ClientGrpc,
         @Inject('AUTH_PACKAGE') private AuthClient: ClientGrpc,
         @Inject('USER_PACKAGE') private UserClient: ClientGrpc,
-        @Inject('KAFKA_CLIENT') private kafkaClient: ClientKafka,
         @Inject('MQTT_CLIENT') private mqttClient: ClientMqtt,
-
+        private kafkaService: KafkaService,
 
     ) { }
 
@@ -41,14 +38,9 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
         // this.notificationService = this.NotificationClient.getService<NotificationService>('NotificationService');
         this.authService = this.AuthClient.getService<AuthService>('AuthService');
         this.userService = this.UserClient.getService<UserService>('UserService');
-        this.kafkaClient.subscribeToResponseOf('movie.add');
-        await this.kafkaClient.connect();
     }
 
-    async onModuleDestroy() {
-        await this.kafkaClient.close();
-    }
-
+   
 
     /**
      * Retrieves a list of movies.
@@ -96,16 +88,11 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
             const data = await lastValueFrom(observable);                        // data is object {emails: []}
 
             if (data.emails && data.emails.length > 0) {
-                await lastValueFrom(
-                    this.kafkaClient.send('movie.add', {
-                        key: '1',
-                        value: {
-                            data: data,
-                            title: title,
-                        },
-                        partition: 0,
-                    }),
-                );
+
+                await this.kafkaService.sendMovieData('1', {
+                    data: data,
+                    title: title,
+                  });
             }
 
             return;
@@ -318,7 +305,7 @@ export class MovieService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    
+
     /**
      * Deletes a comment by its ID.
      *

@@ -7,11 +7,12 @@ import { GuardsModule } from 'src/guards/guards.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Comment, CommentSchema } from 'src/movie/schemas/comments.schema';
 import { ConfigModule } from '@nestjs/config';
+import { KafkaModule } from 'src/providers/kafka/kafka.module';
 
 
 @Module({
   imports: [
-
+    KafkaModule,
     ConfigModule.forRoot({}),
     GuardsModule,
     MongooseModule.forFeature(
@@ -32,17 +33,6 @@ import { ConfigModule } from '@nestjs/config';
           protoPath: process.env.AUTH_PROTO_PATH,
         },
       },
-
-      {
-        name: 'NOTIFICATION_PACKAGE',
-        transport: Transport.GRPC,
-        options: {
-          url: process.env.NOTIFICATION_GRPC_URL,
-          package: process.env.NOTIFICATION_PACKAGE,
-          protoPath: process.env.NOTIFICATION_PROTO_PATH,
-        },
-      },
-
       {
         name: 'USER_PACKAGE',
         transport: Transport.GRPC,
@@ -61,16 +51,6 @@ import { ConfigModule } from '@nestjs/config';
         }
       },
 
-      {
-        name: 'KAFKA_CLIENT',
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            brokers: [process.env.KAFKA_URL],
-          },
-        },
-      },
-      
     ]),
   ],
   controllers: [MovieController],
